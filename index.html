@@ -11,5 +11,144 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Tutorial button + modal -->
+    <script type="module">
+      const waitFor = (selector, timeoutMs = 10000) => new Promise((resolve, reject) => {
+        const start = Date.now();
+        const tick = () => {
+          const el = document.querySelector(selector);
+          if (el) return resolve(el);
+          if (Date.now() - start > timeoutMs) return reject(new Error('Timeout waiting for ' + selector));
+          requestAnimationFrame(tick);
+        };
+        tick();
+      });
+
+      const createTutorialModal = () => {
+        if (document.getElementById('kai-tutorial-overlay')) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'kai-tutorial-overlay';
+        overlay.style.cssText = [
+          'position:fixed',
+          'inset:0',
+          'background:rgba(0,0,0,0.55)',
+          'display:none',
+          'align-items:center',
+          'justify-content:center',
+          'padding:16px',
+          'z-index:99999'
+        ].join(';');
+
+        const card = document.createElement('div');
+        card.style.cssText = [
+          'width:min(960px, 100%)',
+          'max-height:90vh',
+          'background:rgba(15,23,42,0.94)',
+          'border:1px solid rgba(255,255,255,0.14)',
+          'border-radius:16px',
+          'box-shadow:0 20px 60px rgba(0,0,0,0.35)',
+          'overflow:hidden'
+        ].join(';');
+
+        const header = document.createElement('div');
+        header.style.cssText = [
+          'display:flex',
+          'align-items:center',
+          'justify-content:space-between',
+          'gap:12px',
+          'padding:12px 14px',
+          'background:rgba(255,255,255,0.06)'
+        ].join(';');
+
+        const title = document.createElement('div');
+        title.textContent = 'Tutorial';
+        title.style.cssText = 'font:600 14px system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:#fff; letter-spacing:.2px;';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-label', 'Cerrar');
+        closeBtn.style.cssText = [
+          'appearance:none',
+          'border:1px solid rgba(255,255,255,0.16)',
+          'background:rgba(255,255,255,0.06)',
+          'color:#fff',
+          'border-radius:10px',
+          'padding:8px 10px',
+          'cursor:pointer'
+        ].join(';');
+        closeBtn.innerHTML = '✕';
+
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+
+        const body = document.createElement('div');
+        body.style.cssText = 'padding:12px;background:transparent';
+
+        const video = document.createElement('video');
+        video.src = './tutorial.mp4';
+        video.controls = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.style.cssText = [
+          'width:100%',
+          'height:auto',
+          'max-height:calc(90vh - 70px)',
+          'border-radius:12px',
+          'background:#000'
+        ].join(';');
+
+        body.appendChild(video);
+        card.appendChild(header);
+        card.appendChild(body);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        const close = () => {
+          overlay.style.display = 'none';
+          try { video.pause(); video.currentTime = 0; } catch (_) {}
+        };
+
+        closeBtn.addEventListener('click', close);
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) close();
+        });
+        window.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && overlay.style.display !== 'none') close();
+        });
+
+        overlay.__kaiOpen = () => {
+          overlay.style.display = 'flex';
+          // mobile-safe: no autoplay. User hits play.
+        };
+      };
+
+      const addTutorialButton = async () => {
+        const headerRight = await waitFor('.header-right');
+        if (headerRight.querySelector('.tutorial-btn')) return;
+
+        const btn = document.createElement('button');
+        btn.className = 'header-btn tutorial-btn';
+        btn.title = 'Tutorial';
+        btn.type = 'button';
+        btn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M8 5v14l11-7z"></path>
+          </svg>
+          Tutorial
+        `;
+
+        headerRight.insertBefore(btn, headerRight.firstChild);
+        btn.addEventListener('click', () => {
+          createTutorialModal();
+          document.getElementById('kai-tutorial-overlay').__kaiOpen();
+        });
+      };
+
+      addTutorialButton().catch((err) => console.warn('[Tutorial]', err));
+    </script>
+
   </body>
 </html>
